@@ -1,0 +1,12 @@
+{
+  "screen.better_updates.update_available.title": "Update available for %s",
+  "screen.better_updates.update_available.description": "Do you want to download the update?",
+  "screen.better_updates.update_available.help": "This message get you when there's an update available for Random Thingz.\nClick yes to download it, no, to continue.\nNew version: %s",
+
+  "screen.better_updates.modules.help": "This screen is for managing modules in Random Thingz.",
+  "screen.better_updates.downloading_update.title": "Downloading Update",
+  "screen.better_updates.downloading_update.description": "Downloaded %1$s of %2$s, %3$s complete.",
+  "screen.better_updates.update_downloaded.title": "Update Downloaded",
+  "screen.better_updates.update_downloaded.description": "Do you want to open the update folder?",
+  "toasts.better_updates.update_available.title": "Update Available"
+}
