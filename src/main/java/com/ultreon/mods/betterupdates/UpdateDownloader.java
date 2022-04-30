@@ -1,7 +1,10 @@
 package com.ultreon.mods.betterupdates;
 
+import com.ultreon.mods.betterupdates.event.UpdateDownloadedEvent;
+import com.ultreon.mods.betterupdates.event.UpdateFailedEvent;
 import com.ultreon.mods.betterupdates.version.Dependency;
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -12,6 +15,7 @@ import java.util.Set;
 public class UpdateDownloader extends Thread implements Runnable {
     private final URL downloadUrl;
     private final Runnable done;
+    private final AbstractUpdater<?> updater;
     private int totalSize = 0;
     private int downloaded;
     private DownloadState state = DownloadState.INITIATING;
@@ -46,6 +50,7 @@ public class UpdateDownloader extends Thread implements Runnable {
 
     public UpdateDownloader(URL downloadUrl, AbstractUpdater<?> updater, Runnable done, OnProgress progressbar, Set<Dependency> dependencies, int blockSize) {
         super("BetterUpdatesDownloader " + updater.getModId());
+        this.updater = updater;
         this.downloadUrl = downloadUrl;
         this.done = done;
         this.progressbar = progressbar;
@@ -72,15 +77,14 @@ public class UpdateDownloader extends Thread implements Runnable {
             BetterUpdatesMod.LOGGER.info("Opening connection to the update file.");
             state = DownloadState.CONNECTING;
             URLConnection urlConnection = url.openConnection();
-//            urlConnection.connect();
 
             String headerField = urlConnection.getHeaderField("Content-Length");
             this.totalSize = Integer.parseInt(headerField);
             progressbar.onProgress(0, totalSize);
             BetterUpdatesMod.LOGGER.info("Total download size is: " + this.totalSize);
 
-            BetterUpdatesMod.LOGGER.info("Loading input stream for connection...");
             // Url Input stream
+            BetterUpdatesMod.LOGGER.info("Loading input stream for connection...");
             inputStream = urlConnection.getInputStream();
 
             // Update folder.
@@ -118,14 +122,12 @@ public class UpdateDownloader extends Thread implements Runnable {
             BetterUpdatesMod.LOGGER.info("Block size: " + currentBlockSize);
 
             // Read data.
-//            RandomThingz.LOGGER.info("Reading data...");
             byte[] block = new byte[currentBlockSize];
             int read = read(inputStream, block, currentBlockSize);
 
             state = DownloadState.DOWNLOADING;
 
             // Write data.
-//            RandomThingz.LOGGER.info("Writing data...");
             if (read != -1) {
                 updateStream.write(block, 0, read);
                 updateStream.flush();
@@ -135,7 +137,6 @@ public class UpdateDownloader extends Thread implements Runnable {
                 downloaded = offset;
                 progressbar.onProgress(offset, totalSize);
             }
-//            RandomThingz.LOGGER.info("New offset: " + offset);
 
             // Read other bytes.
             while (read != -1) {
@@ -162,10 +163,16 @@ public class UpdateDownloader extends Thread implements Runnable {
             // Flush and close local output stream.
             updateStream.flush();
             updateStream.close();
+
+            MinecraftForge.EVENT_BUS.post(new UpdateDownloadedEvent(updater.getModId()));
+
             state = DownloadState.DONE;
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             // An error occurred.
             e.printStackTrace();
+
+            MinecraftForge.EVENT_BUS.post(new UpdateFailedEvent(updater.getModId(), e));
+
             state = DownloadState.FAILED;
 
             if (inputStream != null) {

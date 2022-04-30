@@ -1,12 +1,14 @@
 package com.ultreon.mods.betterupdates;
 
 import com.google.gson.*;
+import com.ultreon.mods.betterupdates.event.UpdateAvailableEvent;
 import com.ultreon.mods.betterupdates.version.Dependencies;
 import com.ultreon.mods.betterupdates.version.Dependency;
 import com.ultreon.mods.betterupdates.version.Release;
 import com.ultreon.mods.betterupdates.version.Version;
 import it.unimi.dsi.fastutil.ints.Int2IntFunctions;
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -253,6 +255,8 @@ public abstract class AbstractUpdater<T extends Version> {
                     // Close reader and stream.
                     targetReader.close();
                     inputStream.close();
+
+                    MinecraftForge.EVENT_BUS.post(new UpdateAvailableEvent(this, modContainer.getModId(), url));
 
                     // Return information, there's an update available.
                     return new UpdateInfo(UpdateStatus.UPDATE_AVAILABLE, null, url);
